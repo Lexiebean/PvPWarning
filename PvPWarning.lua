@@ -1,5 +1,8 @@
 PvPWarning_ChatFrame_OnEvent = ChatFrame_OnEvent
 local PvPWarningFlagged = false
+local PvPWarned = GetTime()
+local PvPMasterVolume = false
+local PvPMasterSoundEffects = false
 
 --Creating the warning frame
 PvPWarningGUI = CreateFrame("Frame", "PvPWarningGUI", UIParent)
@@ -20,11 +23,6 @@ PvPWarningGUI.warning.text:SetText("!!! YOU ARE PVP FLAGGED !!!")
 
 --Adding sound that plays when the frame is first shown
 table.insert(UISpecialFrames, "PvPWarningGUI")
-PvPWarningGUI:SetScript("OnShow", function()
-PlaySound("ReadyCheck","SFX")
-
-end)
-
 PvPWarningGUI:Hide()
 
 function ChatFrame_OnEvent(event)
@@ -33,6 +31,21 @@ function ChatFrame_OnEvent(event)
 		if not PvPWarningFlagged then
 			PvPWarningGUI:Show()
 			PvPWarningFlagged = true
+			if GetCVar("MasterSoundEffects") == "0" then
+				SetCVar("MasterSoundEffects", 1)
+				PvPMasterSoundEffects = true
+				PvPWarned = GetTime()
+				PvPWarningSound:Show()
+			end
+			if GetCVar("MasterVolume") == "0" then
+				SetCVar("MasterVolume", 1)
+				PvPMasterVolume = true
+				PvPWarned = GetTime()
+				PvPWarningSound:Show()
+			end
+			local sound = "Sound\\Interface\\PVPFlagTakenHordeMono.wav"
+			if UnitFactionGroup("player") == "Alliance" then sound = "Sound\\Interface\\PVPFlagTakenMono.wav" end
+			PlaySoundFile(sound,"master")
 		end
 	else
 		if (PvPWarningGUI:IsVisible()) then
@@ -45,3 +58,22 @@ function ChatFrame_OnEvent(event)
 	PvPWarning_ChatFrame_OnEvent(event);
 
 end
+
+PvPWarningSound = CreateFrame("Frame")
+PvPWarningSound:Hide()
+PvPWarningSound:SetScript("OnUpdate", function()
+	local plus = 2 --seconds
+	local gt = GetTime() * 1000
+	local st = (PvPWarned + plus) * 1000
+	if gt >= st then
+		if PvPMasterSoundEffects == true then
+			PvPMasterSoundEffects = false
+			SetCVar("MasterSoundEffects",0)
+		end
+		if PvPMasterVolume == true then
+			SetCVar("MasterVolume", 0)
+			PvPMasterVolume = false
+		end
+		PvPWarningSound:Hide()
+	end
+end)
